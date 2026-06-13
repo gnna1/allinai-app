@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./allinai.db"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         String   @default("user") // user | admin
+  balance      Float    @default(0.0)     // 账户余额（元）
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  conversations Conversation[]
+  apiKeys       ApiKey[]
+  usageRecords  UsageRecord[]
+  subscriptions Subscription[]
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  title     String   @default("新对话")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String       // user | assistant | system
+  content        String
+  modelId        String?      // 使用的模型
+  tokensIn       Int          @default(0)
+  tokensOut      Int          @default(0)
+  cost           Float        @default(0.0)
+  createdAt      DateTime     @default(now())
+}
+
+// 系统中可用的模型配置
+model Model {
+  id          String   @id @default(cuid())
+  slug        String   @unique          // deepseek-v3, gpt-4o, claude-sonnet
+  name        String                    // DeepSeek V3, GPT-4o, Claude 3.5 Sonnet
+  provider    String                    // deepseek, openai, anthropic, siliconflow, nonelinear
+  category    String   @default("chat") // chat, image, embed
+  enabled     Boolean  @default(true)
+  inputPrice  Float    @default(0.0)    // 每百万 token 输入价格（元）
+  outputPrice Float    @default(0.0)    // 每百万 token 输出价格（元）
+  apiBaseUrl  String?                   // 自定义 API 地址
+  apiKey      String?                   // 自定义 API Key
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 用户的 API Key
+model ApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String   @default("默认")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  lastUsed  DateTime?
+}
+
+// 用量记录
+model UsageRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  modelId   String?
+  modelSlug String?
+  tokensIn  Int      @default(0)
+  tokensOut Int      @default(0)
+  cost      Float    @default(0.0)
+  type      String   @default("api") // api | subscription
+  createdAt DateTime @default(now())
+}
+
+// 套餐订阅
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planName    String   // 基础版, 专业版, 企业版
+  quotaTokens Int      @default(0)       // 套餐包含的 token 额度
+  usedTokens  Int      @default(0)
+  price       Float    @default(0.0)
+  startDate   DateTime @default(now())
+  endDate     DateTime
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}

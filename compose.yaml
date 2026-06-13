@@ -1,0 +1,30 @@
+# ============================================
+# AllInAI - One-click Deployment
+# ============================================
+# Usage:
+#   1. Copy .env.example to .env and fill in your API keys
+#   2. Run: docker compose up -d
+#   3. Visit http://localhost:3000
+
+services:
+  allinai:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - TONGYI_API_KEY=${TONGYI_API_KEY}
+      - ZHIPU_API_KEY=${ZHIPU_API_KEY}
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY}
+      - KIMI_API_KEY=${KIMI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE=${OPENAI_API_BASE}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - CLAUDE_API_BASE=${CLAUDE_API_BASE}
+    volumes:
+      - allinai-data:/app/prisma  # persist SQLite database
+    restart: unless-stopped
+
+volumes:
+  allinai-data:
